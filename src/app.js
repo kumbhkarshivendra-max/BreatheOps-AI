@@ -12,7 +12,6 @@ let activeZone = null;
 let mapInstance = null;
 let zoneCircles = {};
 
-// Instant built-in cache of real neighbourhoods so common city searches take 0ms and never trigger rate limits
 const KNOWN_CITIES = {
   bhopal: {
     lat: 23.2599,
@@ -80,12 +79,14 @@ function normalizeValue(rawStr) {
   return { value: Math.round(num), status: "VALID", flag };
 }
 
+// FIXED: Splits strictly by pipe '|' when pipes are present so commas in "Arera Colony, Bhopal" never break columns!
 function parseMessyTableLocal(rawText) {
   const lines = String(rawText || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const rows = [];
   lines.forEach((line, idx) => {
     if (idx === 0 && /sensor|pm2\.?5/i.test(line)) return;
-    const cols = line.split(/\||,|\t/).map(c => c.trim());
+    const delimiter = line.includes("|") ? "|" : line.includes("\t") ? "\t" : ",";
+    const cols = line.split(delimiter).map(c => c.trim());
     const pm25Audit = normalizeValue(cols[2]);
     rows.push({
       rowId: `Row #${idx}`,
@@ -110,7 +111,6 @@ ${zone.id}-C | ${zone.name} | N/A | Backup solar sensor offline (Data Gap)
 ${zone.id}-ERR | ${zone.name} | -999 ug/m3 | Hardware calibration spike rejected`;
 }
 
-// GENERATE 9 REAL ZONES WITHOUT RATE-LIMITING OPENSTREETMAP
 async function generateDynamicZonesAround(centerLat, centerLng, cityHint = "Bhopal", customAreas = null) {
   const statusEl = document.getElementById("liveSyncStatus");
   if (statusEl) {
@@ -158,7 +158,7 @@ async function generateDynamicZonesAround(centerLat, centerLng, cityHint = "Bhop
     const prevPm25 = storedPrev ? Number(storedPrev) : Math.max(20, pm25 - (idx % 2 === 0 ? 14 : -11));
     localStorage.setItem(prevKey, String(pm25));
 
-    const areaLabel = customAreas && customAreas[idx] ? `${customAreas[idx]}, ${cityHint}` : `${cityHint} ${o.dir}`;
+    const areaLabel = customAreas && customAreas[idx] ? `${customAreas[idx]} (${cityHint})` : `${cityHint} ${o.dir}`;
 
     return {
       id: o.id,
@@ -194,30 +194,24 @@ function populateZoneDropdown() {
   const sel = document.getElementById("setupZone");
   if (!sel) return;
   sel.innerHTML = ZONES.map(
-    z => `<option value="${z.id}" ${z.id === userProfile.zoneId ? "selected" : ""}>${z.name} (PM2.5: ${z.pm25} µg/m³)</option>`
+    z => `<option value="${z.id}" ${z.id === userProfile.zoneId ? "selected" : ""}>${z.name} — PM2.5: ${z.pm25} µg/m³</option>`
   ).join("");
 }
 
-// INITIALIZE MAP WITH HIGH-SPEED CARTODB TILES (NEVER RATE-LIMITS OR BLOCKS)
-// INITIALIZE MAP WITH 100% KEY-FREE ESRI WORLD STREET TILES
 function initMap() {
   if (typeof L === "undefined" || mapInstance) return;
   mapInstance = L.map("airMap").setView([23.2599, 77.4126], 12);
 
-  // Esri World Street Map requires ZERO API keys and never blocks or rate-limits
   const tileLayer = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
     {
-      attribution: "Tiles © Esri — Source: Esri, TomTom, Garmin, FAO, NOAA, USGS, © OpenStreetMap",
+      attribution: "Tiles © Esri — Source: Esri, TomTom, Garmin, USGS, © OpenStreetMap",
       maxZoom: 19
     }
   );
 
-  // Automatic backup if a school/office firewall blocks Esri
   tileLayer.on("tileerror", () => {
-    L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
-      maxZoom: 18
-    }).addTo(mapInstance);
+    L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(mapInstance);
   });
 
   tileLayer.addTo(mapInstance);
@@ -228,7 +222,7 @@ function initMap() {
     const customId = `Z${ZONES.length + 1}`;
     const newZone = {
       id: customId,
-      name: `${customId}: Inspection Pin (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E)`,
+      name: `${customId}: Inspection Pin (${lat.toFixed(3)}°N)`,
       lat,
       lng,
       pm25: 115,
@@ -245,6 +239,7 @@ function initMap() {
     renderWorkspace();
   });
 }
+
 function drawMapCircles() {
   if (!mapInstance || typeof L === "undefined") return;
   Object.values(zoneCircles).forEach(c => mapInstance.removeLayer(c));
@@ -314,8 +309,9 @@ function renderWorkspace() {
     `🔄 Comparison with Previous Brief: PM2.5 in ${activeZone.name} ${diff >= 0 ? "worsened by +" + diff : "improved by " + diff} µg/m³ (Previous: ${activeZone.prevPm25} µg/m³ → Current: ${activeZone.pm25} µg/m³).`;
 
   document.getElementById("plainSummary").textContent =
-    `Localized Hotspot in ${activeZone.name}: ${activeZone.hotspot}. Fine-to-coarse particulate ratio (${(activeZone.pm25 / activeZone.pm10).toFixed(2)}) confirms active local emissions.`;
+    `Localized Hotspot in ${activeZone.name}: ${activeZone.hotspot}. Verified by Sensor ${activeZone.id}-A (${activeZone.pm25} µg/m³) & Sensor ${activeZone.id}-B.`;
 
+  // Populate the Audit Popup Modal cleanly
   document.getElementById("traceableBadges").innerHTML = rows.map(r =>
     `<span class="trace-pill">📌 ${r.rowId} (${r.sensorId}): ${r.pm25 !== null ? r.pm25 + " µg/m³" : "EXCLUDED FROM AQI"}</span>`
   ).join("");
@@ -373,7 +369,6 @@ function renderWorkspace() {
   document.getElementById("citizenAdvisoryText").textContent = ageCareMap[userProfile.ageGroup];
 }
 
-// FAST, RATE-LIMIT-PROOF CITY SEARCH (USES INSTANT CACHE + PHOTON GEOCODER FALLBACK)
 async function searchCityAndRecenter() {
   const rawQuery = document.getElementById("citySearchInput").value.trim();
   if (!rawQuery) return;
@@ -383,7 +378,6 @@ async function searchCityAndRecenter() {
   const cleanKey = rawQuery.toLowerCase();
 
   try {
-    // 1. Check instant built-in dictionary first (0ms, never fails)
     for (const [key, info] of Object.entries(KNOWN_CITIES)) {
       if (cleanKey.includes(key)) {
         const displayCity = key.charAt(0).toUpperCase() + key.slice(1);
@@ -396,7 +390,6 @@ async function searchCityAndRecenter() {
       }
     }
 
-    // 2. For any other town/city worldwide, use Photon Geocoder (No 1-req/sec block!)
     const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(rawQuery)}&limit=1`);
     const data = await res.json();
     if (data && data.features && data.features.length > 0) {
