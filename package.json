@@ -1,15 +1,29 @@
 {
-  "name": "breatheops-visual-civic-ai",
+  "name": "breatheops-civic-ai",
   "version": "2.0.0",
+  "description": "AI-driven civic air quality intelligence and localized intervention platform powered by Google Gemini",
   "type": "module",
+  "main": "src/app.js",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "npx serve ."
   },
+  "keywords": [
+    "civic-tech",
+    "air-quality",
+    "gemini-ai",
+    "genai",
+    "leaflet",
+    "public-health"
+  ],
   "dependencies": {
     "@google/genai": "^0.1.2",
     "leaflet": "^1.9.4"
   },
   "devDependencies": {
     "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
