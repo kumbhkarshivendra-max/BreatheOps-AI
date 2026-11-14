@@ -199,16 +199,28 @@ function populateZoneDropdown() {
 }
 
 // INITIALIZE MAP WITH HIGH-SPEED CARTODB TILES (NEVER RATE-LIMITS OR BLOCKS)
+// INITIALIZE MAP WITH 100% KEY-FREE ESRI WORLD STREET TILES
 function initMap() {
   if (typeof L === "undefined" || mapInstance) return;
   mapInstance = L.map("airMap").setView([23.2599, 77.4126], 12);
 
-  // CartoDB Voyager CDN tiles never throttle or show broken icons
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    attribution: "© OpenStreetMap contributors © CARTO",
-    subdomains: "abcd",
-    maxZoom: 19
-  }).addTo(mapInstance);
+  // Esri World Street Map requires ZERO API keys and never blocks or rate-limits
+  const tileLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    {
+      attribution: "Tiles © Esri — Source: Esri, TomTom, Garmin, FAO, NOAA, USGS, © OpenStreetMap",
+      maxZoom: 19
+    }
+  );
+
+  // Automatic backup if a school/office firewall blocks Esri
+  tileLayer.on("tileerror", () => {
+    L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
+      maxZoom: 18
+    }).addTo(mapInstance);
+  });
+
+  tileLayer.addTo(mapInstance);
 
   mapInstance.on("click", e => {
     if (userProfile.role !== "authority") return;
@@ -233,7 +245,6 @@ function initMap() {
     renderWorkspace();
   });
 }
-
 function drawMapCircles() {
   if (!mapInstance || typeof L === "undefined") return;
   Object.values(zoneCircles).forEach(c => mapInstance.removeLayer(c));
