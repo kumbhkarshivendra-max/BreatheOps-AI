@@ -18,7 +18,6 @@
       <p class="muted">Search any city or use GPS to load real neighbourhood names, live satellite PM2.5, and role-locked interventions.</p>
 
       <div id="onboardingForm">
-        <!-- Live City / Locality Search inside Onboarding -->
         <div class="api-setup" style="margin-bottom:12px;">
           <label for="citySearchInput">📍 Search Your City / Neighbourhood (or use GPS)</label>
           <div style="display:flex; gap:8px;">
@@ -42,7 +41,9 @@
 
           <div>
             <label for="setupZone">2. Your Local Area (Real Map Locality)</label>
-            <select id="setupZone"></select>
+            <select id="setupZone">
+              <option value="Z1">Z1: Central Sector</option>
+            </select>
           </div>
 
           <div>
@@ -70,7 +71,7 @@
           <input type="password" id="setupApiKey" placeholder="Paste AIza... key from aistudio.google.com" />
         </div>
 
-        <button type="button" id="openDashboardBtn" class="btn-primary full-width" onclick="window.openBreatheOpsDashboard && window.openBreatheOpsDashboard()">
+        <button type="button" id="openDashboardBtn" class="btn-primary full-width">
           🚀 Open My Personalized Air Dashboard
         </button>
       </div>
@@ -88,8 +89,8 @@
     </div>
 
     <div class="controls">
-      <button type="button" class="btn-outline" id="changeProfileBtn" onclick="document.getElementById('onboardingModal').style.display='flex'; document.getElementById('onboardingModal').classList.remove('hidden');">⚙️ Change Area / Role / Language</button>
-      <button type="button" class="btn-outline" id="contrastBtn" aria-pressed="false" onclick="document.body.classList.toggle('high-contrast')">◐ High Contrast</button>
+      <button type="button" class="btn-outline" id="changeProfileBtn">⚙️ Change Area / Role / Language</button>
+      <button type="button" class="btn-outline" id="contrastBtn" aria-pressed="false">◐ High Contrast</button>
     </div>
   </header>
 
@@ -106,7 +107,6 @@
         <span><i class="dot mod"></i> Poor (61–100)</span>
         <span><i class="dot poor"></i> Very Poor (101–150)</span>
         <span><i class="dot severe"></i> Severe (150+)</span>
-        <span class="muted">💡 Tip: Zoom/pan anywhere & click "Scan Visible Map Area" (or tap any street if Authority)</span>
       </div>
     </section>
 
@@ -128,9 +128,6 @@
       <div class="info-block">
         <h3>🔍 Plain-Language Trend & Traceable Sensor Proof</h3>
         <p id="plainSummary"></p>
-        <small class="muted" style="display:block; margin-top:6px;">
-          <strong>How to read these badges:</strong> Each badge links the summary above to a raw sensor reading in this locality, while the red box isolates broken sensors or unit conversions so bad data never corrupts your AQI:
-        </small>
         <div id="traceableBadges" class="badge-row"></div>
         <div id="dataGapAlert" class="gap-alert"></div>
       </div>
@@ -168,16 +165,28 @@
   </main>
 
   <script>
-    window.openBreatheOpsDashboard = function () {
-      var modal = document.getElementById("onboardingModal");
-      if (modal) {
-        modal.classList.add("hidden");
-        modal.style.display = "none";
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === "openDashboardBtn") {
+        var modal = document.getElementById("onboardingModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.display = "none";
+        }
+        if (typeof window.applyOnboardingProfile === "function") {
+          window.applyOnboardingProfile();
+        }
       }
-      if (typeof window.applyOnboardingProfile === "function") {
-        window.applyOnboardingProfile();
+      if (e.target && e.target.id === "changeProfileBtn") {
+        var modal2 = document.getElementById("onboardingModal");
+        if (modal2) {
+          modal2.classList.remove("hidden");
+          modal2.style.display = "flex";
+        }
       }
-    };
+      if (e.target && e.target.id === "contrastBtn") {
+        document.body.classList.toggle("high-contrast");
+      }
+    });
   </script>
   <script type="module" src="./src/app.js"></script>
 </body>
