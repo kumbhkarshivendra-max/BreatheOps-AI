@@ -1,33 +1,45 @@
-export async function generateCivicIntelligence({ apiKey, zone, profile, normalizedRows, previousPm25 }) {
+import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
+
+export async function generateCivicIntelligence({ apiKey, zone, profile, normalizedRows, previousBrief }) {
   if (!apiKey) {
-    throw new Error("Please click 'Change Area / Role' at the top and paste your free Gemini API key first.");
+    throw new Error("Gemini API Key is required to run real Generative AI synthesis. Paste your key in the configuration popup.");
   }
 
-  const { GoogleGenAI, Type } = await import("https://esm.run/@google/genai");
   const ai = new GoogleGenAI({ apiKey });
 
-  const readingLevelMap = {
-    child: "Simple Grade-4 Child-Friendly level (warm, protective, easy words for school kids)",
-    adult: "Standard Clear Public level (direct, practical everyday language)",
-    senior: "Older Adult & Sensitive Lungs High-Care level (gentle, clear, health-first guidance)"
-  };
-
   const prompt = `
-You are BreatheOps AI, a friendly Civic Air Quality Assistant.
-Analyze the local air quality situation and generate a response ENTIRELY in ${profile.language} (Universal Translation Mode).
+You are BreatheOps AI, an expert Civic Air Quality Intelligence System.
+Analyze the real-time satellite multi-pollutant telemetry and the pasted/uploaded sensor table below.
+Generate the complete civic output ENTIRELY in ${profile.language}.
 
-LOCALITY: ${zone.name}
-ASKING USER ROLE: ${profile.role}
-TARGET AUDIENCE & READING LEVEL: ${readingLevelMap[profile.ageGroup]}
-PREVIOUS READING VS CURRENT: Was ${previousPm25}, now ${zone.pm25}
-NORMALIZED SENSOR TABLE: ${JSON.stringify(normalizedRows)}
+REAL-TIME SATELLITE TELEMETRY FOR THIS LOCALITY:
+- Locality Name: ${zone.name}
+- GPS Coordinates: ${zone.lat.toFixed(4)}, ${zone.lng.toFixed(4)}
+- PM2.5: ${zone.pm25} µg/m³
+- PM10: ${zone.pm10} µg/m³
+- Nitrogen Dioxide (NO2): ${zone.no2} µg/m³
+- Carbon Monoxide (CO): ${zone.co} µg/m³
+- Sulphur Dioxide (SO2): ${zone.so2} µg/m³
 
-STRICT RULES:
-1. Write "deltaSummary", "plainSummary", "prioritizedActions", and "citizenAdvisory" naturally in ${profile.language}.
-2. Provide 6 specific, practical "prioritizedActions" tailored strictly to what a "${profile.role}" can do right now.
-3. DO NOT include technical chemical names, numbers, or units (NO "PM2.5", "PM10", "NO2", or "µg/m³") inside "prioritizedActions" or "citizenAdvisory" — write pure, easy-to-follow human actions.
-4. Keep technical sensor IDs and unit conversion flags strictly inside "citations" and "dataQualityFlags" (for the hidden audit popup).
-5. Generate an "internalBriefingNote" for official municipal/ward records.
+PREVIOUS BRIEF RECORD FOR COMPARISON:
+${JSON.stringify(previousBrief)}
+
+USER CONTEXT:
+- Asking Role: ${profile.role}
+- Target Audience & Reading Level: ${profile.ageGroup}
+- Preferred Output Language: ${profile.language}
+
+NORMALIZED SENSOR & FIELD TABLE (WITH FLAGGED GAPS/CONVERSIONS):
+${JSON.stringify(normalizedRows, null, 2)}
+
+STRICT GENERATION INSTRUCTIONS:
+1. "deltaSummary": Compare current telemetry against the Previous Brief record to explain what changed and why in ${profile.language}.
+2. "plainSummary": Infer the most likely pollution hotspot and emission source from the chemical ratios (e.g., PM2.5/PM10 ratio, NO2 traffic signal, SO2/CO combustion signal) and sensor table notes. Write in plain language in ${profile.language}.
+3. "prioritizedActions": Provide 6 highly actionable, practical local interventions tailored strictly to what a "${profile.role}" can execute. DO NOT include technical chemical formulas or numbers (no PM2.5, NO2, or µg/m³) inside these 6 action bullets—only clear human actions in ${profile.language}.
+4. "citizenAdvisory": Write a compassionate public health advisory in ${profile.language} calibrated to "${profile.ageGroup}", with extra care for children, older adults, and people sensitive to poor air.
+5. "internalBriefingNote": Write a concise official operational briefing memo in ${profile.language} logging the telemetry delta, isolated sensor anomalies, and assigned role escalation.
+6. "whatsappBroadcastMessage": Draft a complete, ready-to-forward WhatsApp group message in ${profile.language} with clear formatting and emojis that combines the local alert, the health advisory, and the top action steps.
+7. "citations" & "dataQualityFlags": List every traceable Row # / Sensor ID citation and explicitly flag every missing reading (N/A), unit conversion (mg/m³ -> µg/m³), or rejected sensor outlier.
 `;
 
   const response = await ai.models.generateContent({
@@ -40,22 +52,25 @@ STRICT RULES:
         properties: {
           deltaSummary: { type: Type.STRING },
           plainSummary: { type: Type.STRING },
-          citations: { type: Type.ARRAY, items: { type: Type.STRING } },
-          dataQualityFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
           prioritizedActions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          citizenAdvisory: { type: Type.STRING },
           internalBriefingNote: { type: Type.STRING },
-          citizenAdvisory: { type: Type.STRING }
+          whatsappBroadcastMessage: { type: Type.STRING },
+          citations: { type: Type.ARRAY, items: { type: Type.STRING } },
+          dataQualityFlags: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
         required: [
           "deltaSummary",
           "plainSummary",
-          "citations",
-          "dataQualityFlags",
           "prioritizedActions",
+          "citizenAdvisory",
           "internalBriefingNote",
-          "citizenAdvisory"
+          "whatsappBroadcastMessage",
+          "citations",
+          "dataQualityFlags"
         ]
-      }
+      },
+      temperature: 0.25
     }
   });
 
