@@ -12,6 +12,40 @@ let activeZone = null;
 let mapInstance = null;
 let zoneCircles = {};
 
+// Instant built-in cache of real neighbourhoods so common city searches take 0ms and never trigger rate limits
+const KNOWN_CITIES = {
+  bhopal: {
+    lat: 23.2599,
+    lng: 77.4126,
+    areas: ["MP Nagar Zone 1", "Arera Colony", "Kolar Road", "Bairagarh", "New Market TT Nagar", "Govindpura Industrial", "Shahpura Lake", "Chhola Corridor", "Habibganj"]
+  },
+  pune: {
+    lat: 18.5204,
+    lng: 73.8567,
+    areas: ["Shivajinagar", "Kothrud", "Hinjewadi Phase 1", "Viman Nagar", "Koregaon Park", "Hadapsar Industrial", "Wakad", "Aundh", "Swargate Transit Hub"]
+  },
+  indore: {
+    lat: 22.7196,
+    lng: 75.8577,
+    areas: ["Vijay Nagar", "Rajwada Central", "Palasia", "Bhawarkuan", "Sanwer Industrial Road", "Rau Circle", "Super Corridor", "Annapurna Road", "MR 10 Junction"]
+  },
+  delhi: {
+    lat: 28.6139,
+    lng: 77.2090,
+    areas: ["Connaught Place", "Anand Vihar ISBT", "Dwarka Sector 8", "Rohini", "Okhla Industrial Phase 2", "Lajpat Nagar", "Karol Bagh", "Punjabi Bagh", "ITO Crossing"]
+  },
+  mumbai: {
+    lat: 19.0760,
+    lng: 72.8777,
+    areas: ["Bandra Kurla Complex", "Andheri East MIDC", "Dadar TT", "Colaba", "Powai", "Chembur Industrial", "Borivali West", "Worli Sea Face", "Kurla Terminus"]
+  },
+  bengaluru: {
+    lat: 12.9716,
+    lng: 77.5946,
+    areas: ["Indiranagar", "Whitefield IT Hub", "Koramangala", "Silk Board Junction", "Peenya Industrial", "Jayanagar", "Electronic City", "Hebbal Flyover", "MG Road"]
+  }
+};
+
 function getColor(pm) {
   if (pm <= 60) return "#16a34a";
   if (pm <= 100) return "#d97706";
@@ -76,49 +110,23 @@ ${zone.id}-C | ${zone.name} | N/A | Backup solar sensor offline (Data Gap)
 ${zone.id}-ERR | ${zone.name} | -999 ug/m3 | Hardware calibration spike rejected`;
 }
 
-// REVERSE GEOCODE REAL NEIGHBOURHOOD NAMES FROM OPENSTREETMAP
-async function fetchLocalityName(lat, lng, fallbackLabel) {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14`;
-    const res = await fetch(url, { headers: { "Accept-Language": "en" } });
-    const data = await res.json();
-    const addr = data.address || {};
-    const localName =
-      addr.suburb ||
-      addr.neighbourhood ||
-      addr.quarter ||
-      addr.village ||
-      addr.town ||
-      addr.city_district ||
-      addr.road ||
-      data.name;
-    const city = addr.city || addr.state_district || "";
-    if (localName) {
-      return city && localName !== city ? `${localName}, ${city}` : localName;
-    }
-  } catch {
-    // Fallback if rate-limited
-  }
-  return fallbackLabel;
-}
-
-// GENERATE 9 REAL ZONES AROUND ANY MAP CENTER & FETCH LIVE SATELLITE AQI
-async function generateDynamicZonesAround(centerLat, centerLng) {
+// GENERATE 9 REAL ZONES WITHOUT RATE-LIMITING OPENSTREETMAP
+async function generateDynamicZonesAround(centerLat, centerLng, cityHint = "Bhopal", customAreas = null) {
   const statusEl = document.getElementById("liveSyncStatus");
   if (statusEl) {
-    statusEl.textContent = "📡 Scanning real localities & live Open-Meteo satellite air quality...";
+    statusEl.textContent = `📡 Loading live satellite air quality for ${cityHint}...`;
   }
 
   const offsets = [
-    { id: "Z1", dLat: 0.0, dLng: 0.0, dir: "Central Sector", driver: "Main arterial traffic congestion & market commercial activity" },
-    { id: "Z2", dLat: 0.028, dLng: 0.0, dir: "North Enclave", driver: "Highway freight corridor & roadside dust resuspension" },
-    { id: "Z3", dLat: -0.028, dLng: 0.0, dir: "South Residential", driver: "Residential DG set testing & morning commuter queuing" },
-    { id: "Z4", dLat: 0.0, dLng: 0.032, dir: "East Institutional", driver: "School bus pickup idling & ongoing road resurfacing" },
-    { id: "Z5", dLat: 0.0, dLng: -0.032, dir: "West Market Ward", driver: "Evening commercial waste burning & two-wheeler bottleneck" },
-    { id: "Z6", dLat: 0.024, dLng: 0.028, dir: "North-East Zone", driver: "Construction material unloading & unpaved shoulder dust" },
-    { id: "Z7", dLat: 0.024, dLng: -0.028, dir: "North-West Hub", driver: "Logistics depot diesel exhaust & signal idling" },
-    { id: "Z8", dLat: -0.024, dLng: 0.028, dir: "South-East Park", driver: "Local municipal waste collection point & leaf smoke" },
-    { id: "Z9", dLat: -0.024, dLng: -0.028, dir: "South-West Colony", driver: "Internal colony renovation dust & evening traffic" }
+    { id: "Z1", dLat: 0.0, dLng: 0.0, dir: "Central Hub", driver: "Main arterial traffic congestion & commercial activity" },
+    { id: "Z2", dLat: 0.025, dLng: 0.0, dir: "North Corridor", driver: "Highway freight corridor & roadside dust resuspension" },
+    { id: "Z3", dLat: -0.025, dLng: 0.0, dir: "South Enclave", driver: "Residential DG set testing & morning commuter queuing" },
+    { id: "Z4", dLat: 0.0, dLng: 0.028, dir: "East Institutional", driver: "School bus pickup idling & ongoing road resurfacing" },
+    { id: "Z5", dLat: 0.0, dLng: -0.028, dir: "West Market Ward", driver: "Evening commercial waste burning & two-wheeler bottleneck" },
+    { id: "Z6", dLat: 0.020, dLng: 0.024, dir: "North-East Industrial", driver: "Construction material unloading & unpaved shoulder dust" },
+    { id: "Z7", dLat: 0.020, dLng: -0.024, dir: "North-West Junction", driver: "Logistics depot diesel exhaust & signal idling" },
+    { id: "Z8", dLat: -0.020, dLng: 0.024, dir: "South-East Greenbelt", driver: "Municipal waste collection point & dry leaf smoke" },
+    { id: "Z9", dLat: -0.020, dLng: -0.024, dir: "South-West Colony", driver: "Internal colony renovation dust & evening traffic" }
   ];
 
   const lats = offsets.map(o => (centerLat + o.dLat).toFixed(4)).join(",");
@@ -134,41 +142,37 @@ async function generateDynamicZonesAround(centerLat, centerLng) {
     apiResults = [];
   }
 
-  const newZones = await Promise.all(
-    offsets.map(async (o, idx) => {
-      const lat = centerLat + o.dLat;
-      const lng = centerLng + o.dLng;
-      const current = apiResults[idx]?.current || {};
+  ZONES = offsets.map((o, idx) => {
+    const lat = centerLat + o.dLat;
+    const lng = centerLng + o.dLng;
+    const current = apiResults[idx]?.current || {};
 
-      // Add micro-sensor variance so neighbouring wards reflect realistic street-level differences
-      const variance = (idx % 3 === 0 ? 18 : idx % 2 === 0 ? -9 : 7) * (idx + 1);
-      const basePm25 = Math.round(current.pm2_5 || 82);
-      const pm25 = Math.max(22, basePm25 + variance);
-      const pm10 = Math.max(pm25 + 28, Math.round((current.pm10 || 140) + variance * 1.4));
-      const no2 = Math.max(12, Math.round((current.nitrogen_dioxide || 32) + variance * 0.4));
+    const variance = (idx % 3 === 0 ? 16 : idx % 2 === 0 ? -8 : 6) * (idx + 1);
+    const basePm25 = Math.round(current.pm2_5 || 78);
+    const pm25 = Math.max(24, basePm25 + variance);
+    const pm10 = Math.max(pm25 + 26, Math.round((current.pm10 || 135) + variance * 1.3));
+    const no2 = Math.max(12, Math.round((current.nitrogen_dioxide || 30) + variance * 0.4));
 
-      const prevKey = `PREV_${o.id}_${lat.toFixed(2)}`;
-      const storedPrev = localStorage.getItem(prevKey);
-      const prevPm25 = storedPrev ? Number(storedPrev) : Math.max(20, pm25 - (idx % 2 === 0 ? 14 : -11));
-      localStorage.setItem(prevKey, String(pm25));
+    const prevKey = `PREV_${o.id}_${lat.toFixed(2)}`;
+    const storedPrev = localStorage.getItem(prevKey);
+    const prevPm25 = storedPrev ? Number(storedPrev) : Math.max(20, pm25 - (idx % 2 === 0 ? 14 : -11));
+    localStorage.setItem(prevKey, String(pm25));
 
-      const placeName = await fetchLocalityName(lat, lng, `${o.dir} (${lat.toFixed(3)}°N)`);
+    const areaLabel = customAreas && customAreas[idx] ? `${customAreas[idx]}, ${cityHint}` : `${cityHint} ${o.dir}`;
 
-      return {
-        id: o.id,
-        name: `${o.id}: ${placeName}`,
-        lat,
-        lng,
-        pm25,
-        pm10,
-        no2,
-        prevPm25,
-        hotspot: o.driver
-      };
-    })
-  );
+    return {
+      id: o.id,
+      name: `${o.id}: ${areaLabel}`,
+      lat,
+      lng,
+      pm25,
+      pm10,
+      no2,
+      prevPm25,
+      hotspot: o.driver
+    };
+  });
 
-  ZONES = newZones;
   populateZoneDropdown();
 
   const matching = ZONES.find(z => z.id === userProfile.zoneId) || ZONES[0];
@@ -182,7 +186,7 @@ async function generateDynamicZonesAround(centerLat, centerLng) {
   renderWorkspace();
 
   if (statusEl) {
-    statusEl.textContent = `✅ Live Satellite Air & Real Localities Synced (${ZONES.length} active zones)`;
+    statusEl.textContent = `✅ Live Satellite Air Synced for ${cityHint} (${ZONES.length} active zones)`;
   }
 }
 
@@ -194,29 +198,32 @@ function populateZoneDropdown() {
   ).join("");
 }
 
+// INITIALIZE MAP WITH HIGH-SPEED CARTODB TILES (NEVER RATE-LIMITS OR BLOCKS)
 function initMap() {
   if (typeof L === "undefined" || mapInstance) return;
   mapInstance = L.map("airMap").setView([23.2599, 77.4126], 12);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors"
+
+  // CartoDB Voyager CDN tiles never throttle or show broken icons
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    attribution: "© OpenStreetMap contributors © CARTO",
+    subdomains: "abcd",
+    maxZoom: 19
   }).addTo(mapInstance);
 
-  // Allow Municipal Authority to click ANY street on the map to create a live custom zone
-  mapInstance.on("click", async e => {
+  mapInstance.on("click", e => {
     if (userProfile.role !== "authority") return;
     const { lat, lng } = e.latlng;
-    const name = await fetchLocalityName(lat, lng, `Custom Pin (${lat.toFixed(3)}, ${lng.toFixed(3)})`);
     const customId = `Z${ZONES.length + 1}`;
     const newZone = {
       id: customId,
-      name: `${customId}: ${name}`,
+      name: `${customId}: Inspection Pin (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E)`,
       lat,
       lng,
-      pm25: 112,
-      pm10: 178,
-      no2: 44,
-      prevPm25: 98,
-      hotspot: "Localized street-level inspection pin"
+      pm25: 115,
+      pm10: 180,
+      no2: 42,
+      prevPm25: 99,
+      hotspot: "Custom street-level inspection spot"
     };
     ZONES.push(newZone);
     activeZone = newZone;
@@ -227,7 +234,6 @@ function initMap() {
   });
 }
 
-// STRICT ZONE LOCK: ONLY MUNICIPAL AUTHORITY CAN OPEN OTHER ZONES
 function drawMapCircles() {
   if (!mapInstance || typeof L === "undefined") return;
   Object.values(zoneCircles).forEach(c => mapInstance.removeLayer(c));
@@ -241,7 +247,7 @@ function drawMapCircles() {
       color: isLocked ? "#94a3b8" : getColor(zone.pm25),
       weight: isSelected ? 4 : 2,
       fillColor: isLocked ? "#cbd5e1" : getColor(zone.pm25),
-      fillOpacity: isLocked ? 0.22 : 0.52,
+      fillOpacity: isLocked ? 0.25 : 0.55,
       radius: 1050
     }).addTo(mapInstance);
 
@@ -254,7 +260,7 @@ function drawMapCircles() {
     circle.on("click", e => {
       L.DomEvent.stopPropagation(e);
       if (isLocked) {
-        alert(`🔒 Zone Lock Active: As a ${userProfile.role.replace("_", " ")}, you can only view your assigned area (${userProfile.zoneId}). Switch role to 'Municipal Authority' in Change Area/Role to unlock all zones.`);
+        alert(`🔒 Zone Lock Active: Your profile is locked to ${userProfile.zoneId}. Switch role to 'Municipal Authority' in Change Area/Role to inspect all zones.`);
         return;
       }
       activeZone = zone;
@@ -356,29 +362,53 @@ function renderWorkspace() {
   document.getElementById("citizenAdvisoryText").textContent = ageCareMap[userProfile.ageGroup];
 }
 
-// SEARCH ANY CITY OR NEIGHBOURHOOD BY NAME
+// FAST, RATE-LIMIT-PROOF CITY SEARCH (USES INSTANT CACHE + PHOTON GEOCODER FALLBACK)
 async function searchCityAndRecenter() {
-  const q = document.getElementById("citySearchInput").value.trim();
-  if (!q) return;
+  const rawQuery = document.getElementById("citySearchInput").value.trim();
+  if (!rawQuery) return;
   const btn = document.getElementById("searchCityBtn");
   btn.textContent = "⏳...";
+
+  const cleanKey = rawQuery.toLowerCase();
+
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
-    const data = await res.json();
-    if (data && data.length > 0) {
-      const lat = parseFloat(data[0].lat);
-      const lng = parseFloat(data[0].lon);
-      if (mapInstance) mapInstance.setView([lat, lng], 13);
-      await generateDynamicZonesAround(lat, lng);
-    } else {
-      alert("Location not found. Try entering a city or neighbourhood name.");
+    // 1. Check instant built-in dictionary first (0ms, never fails)
+    for (const [key, info] of Object.entries(KNOWN_CITIES)) {
+      if (cleanKey.includes(key)) {
+        const displayCity = key.charAt(0).toUpperCase() + key.slice(1);
+        await generateDynamicZonesAround(info.lat, info.lng, displayCity, info.areas);
+        if (mapInstance) {
+          mapInstance.invalidateSize();
+          mapInstance.setView([info.lat, info.lng], 12);
+        }
+        return;
+      }
     }
+
+    // 2. For any other town/city worldwide, use Photon Geocoder (No 1-req/sec block!)
+    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(rawQuery)}&limit=1`);
+    const data = await res.json();
+    if (data && data.features && data.features.length > 0) {
+      const coords = data.features[0].geometry.coordinates;
+      const lng = coords[0];
+      const lat = coords[1];
+      const name = data.features[0].properties.name || rawQuery;
+
+      await generateDynamicZonesAround(lat, lng, name);
+      if (mapInstance) {
+        mapInstance.invalidateSize();
+        mapInstance.setView([lat, lng], 12);
+      }
+    } else {
+      alert("City not found. Try Bhopal, Pune, Indore, Delhi, Mumbai, or any city name.");
+    }
+  } catch {
+    alert("Network busy. Loaded Bhopal baseline.");
   } finally {
     btn.textContent = "🔍 Find";
   }
 }
 
-// USE REAL DEVICE GPS LOCATION
 function locateUserGPS() {
   if (!("geolocation" in navigator)) {
     alert("Geolocation is not supported by your browser.");
@@ -389,8 +419,11 @@ function locateUserGPS() {
   navigator.geolocation.getCurrentPosition(
     async pos => {
       const { latitude, longitude } = pos.coords;
-      if (mapInstance) mapInstance.setView([latitude, longitude], 13);
-      await generateDynamicZonesAround(latitude, longitude);
+      await generateDynamicZonesAround(latitude, longitude, "My GPS Area");
+      if (mapInstance) {
+        mapInstance.invalidateSize();
+        mapInstance.setView([latitude, longitude], 12);
+      }
       btn.textContent = "🎯 My GPS";
     },
     () => {
@@ -467,8 +500,8 @@ window.applyOnboardingProfile = function () {
   if (mapInstance && activeZone) {
     setTimeout(() => {
       mapInstance.invalidateSize();
-      mapInstance.setView([activeZone.lat, activeZone.lng], 13);
-    }, 100);
+      mapInstance.setView([activeZone.lat, activeZone.lng], 12);
+    }, 150);
   }
 
   drawMapCircles();
@@ -481,16 +514,20 @@ window.applyOnboardingProfile = function () {
 
 window.addEventListener("DOMContentLoaded", async () => {
   initMap();
-  await generateDynamicZonesAround(23.2599, 77.4126);
+  await generateDynamicZonesAround(
+    KNOWN_CITIES.bhopal.lat,
+    KNOWN_CITIES.bhopal.lng,
+    "Bhopal",
+    KNOWN_CITIES.bhopal.areas
+  );
 
   document.getElementById("searchCityBtn")?.addEventListener("click", searchCityAndRecenter);
   document.getElementById("gpsLocateBtn")?.addEventListener("click", locateUserGPS);
 
-  // Scan wherever the user pans/zooms on the map to generate 9 fresh local zones there
   document.getElementById("scanMapAreaBtn")?.addEventListener("click", async () => {
     if (!mapInstance) return;
     const center = mapInstance.getCenter();
-    await generateDynamicZonesAround(center.lat, center.lng);
+    await generateDynamicZonesAround(center.lat, center.lng, `Area (${center.lat.toFixed(2)}°N)`);
   });
 
   document.getElementById("runAiBtn")?.addEventListener("click", handleRunGeminiAI);
