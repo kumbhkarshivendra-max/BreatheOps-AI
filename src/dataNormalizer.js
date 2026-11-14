@@ -17,10 +17,10 @@ export function normalizePollutantValue(rawStr) {
 
   if (cleaned.includes("mg/m3") || cleaned.includes("mg/m³")) {
     num = Math.round(num * 1000);
-    flag = "Converted mg/m³ → µg/m³";
+    flag = `Auto-converted ${rawStr.trim()} → ${num} µg/m³`;
   } else if (cleaned.includes("ppm")) {
     num = Math.round(num * 1000);
-    flag = "Converted ppm → µg/m³";
+    flag = `Auto-converted ${rawStr.trim()} → ${num} µg/m³`;
   }
 
   if (num < 0 || num > 2000) {
@@ -36,12 +36,13 @@ export function parseMessyTable(rawText) {
 
   lines.forEach((line, idx) => {
     if (idx === 0 && /sensor|pm2\.?5/i.test(line)) return;
-    const cols = line.split(/\||,|\t/).map(c => c.trim());
+    const delimiter = line.includes("|") ? "|" : line.includes("\t") ? "\t" : ",";
+    const cols = line.split(delimiter).map(c => c.trim());
     const pm25Audit = normalizePollutantValue(cols[2]);
 
     rows.push({
-      rowId: `Row #${idx + 1}`,
-      sensorId: cols[0] || `S-${idx + 1}`,
+      rowId: `Row #${idx}`,
+      sensorId: cols[0] || `S-${idx}`,
       zoneName: cols[1] || "Zone 1",
       pm25: pm25Audit.value,
       status: pm25Audit.status,
