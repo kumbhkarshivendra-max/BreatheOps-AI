@@ -1,6 +1,3 @@
-import { parseMessyTable } from "./dataNormalizer.js";
-import { generateCivicIntelligence } from "./aiEngine.js";
-
 const ZONES = [
   {
     id: "Z1",
@@ -66,6 +63,53 @@ let activeZone = ZONES[1];
 let mapInstance = null;
 let zoneCircles = {};
 
+function normalizeValue(rawStr) {
+  if (rawStr === undefined || rawStr === null) {
+    return { value: null, status: "MISSING", flag: "Missing reading (Null)" };
+  }
+  const cleaned = String(rawStr).trim().toLowerCase();
+  if (["n/a", "na", "-", "null", "err", ""].includes(cleaned)) {
+    return { value: null, status: "MISSING", flag: `Data gap ('${rawStr.trim()}')` };
+  }
+  const numMatch = cleaned.match(/-?\d+(\.\d+)?/);
+  if (!numMatch) {
+    return { value: null, status: "UNPARSEABLE", flag: "Invalid format" };
+  }
+  let num = parseFloat(numMatch[0]);
+  let flag = "Verified µg/m³";
+  if (cleaned.includes("mg/m3") || cleaned.includes("mg/m³")) {
+    num = Math.round(num * 1000);
+    flag = "Converted mg/m³ → µg/m³";
+  } else if (cleaned.includes("ppm")) {
+    num = Math.round(num * 1000);
+    flag = "Converted ppm → µg/m³";
+  }
+  if (num < 0 || num > 2000) {
+    return { value: null, status: "OUTLIER", flag: `Rejected sensor glitch (${rawStr.trim()})` };
+  }
+  return { value: Math.round(num), status: "VALID", flag };
+}
+
+function parseMessyTableLocal(rawText) {
+  const lines = String(rawText || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const rows = [];
+  lines.forEach((line, idx) => {
+    if (idx === 0 && /sensor|pm2\.?5/i.test(line)) return;
+    const cols = line.split(/\||,|\t/).map(c => c.trim());
+    const pm25Audit = normalizeValue(cols[2]);
+    rows.push({
+      rowId: `Row #${idx + 1}`,
+      sensorId: cols[0] || `S-${idx + 1}`,
+      zoneName: cols[1] || "Zone 1",
+      pm25: pm25Audit.value,
+      status: pm25Audit.status,
+      flag: pm25Audit.flag,
+      note: cols[3] || "Field observation"
+    });
+  });
+  return rows;
+}
+
 function getColor(pm) {
   if (pm <= 60) return "#16a34a";
   if (pm <= 100) return "#d97706";
@@ -73,7 +117,6 @@ function getColor(pm) {
   return "#dc2626";
 }
 
-// 1. FETCH REAL LIVE SATELLITE AIR QUALITY FROM OPEN-METEO API
 async function syncLiveSatelliteAir() {
   const statusEl = document.getElementById("liveSyncStatus");
   if (statusEl) {
@@ -94,7 +137,7 @@ async function syncLiveSatelliteAir() {
         localStorage.setItem(`PREV_PM_${zone.id}`, String(zone.pm25));
       }
     } catch {
-      // Retain baseline telemetry if offline
+      // Keep baseline if offline
     }
   }));
 
@@ -105,9 +148,8 @@ async function syncLiveSatelliteAir() {
   renderWorkspace();
 }
 
-// 2. INITIALIZE INTERACTIVE LEAFLET MAP & ZONE LOCK
 function initMap() {
-  if (typeof L === "undefined") return;
+  if (typeof L === "undefined" || mapInstance) return;
   mapInstance = L.map("airMap").setView([23.258, 77.425], 12);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
@@ -152,10 +194,9 @@ function drawMapCircles() {
   });
 }
 
-// 3. RENDER TRACEABLE BRIEF, INTERNAL NOTE & CITIZEN ADVISORY
 function renderWorkspace() {
   const messyEl = document.getElementById("messyInput");
-  const rows = parseMessyTable(messyEl ? messyEl.value : SAMPLE_MESSY);
+  const rows = parseMessyTableLocal(messyEl ? messyEl.value : SAMPLE_MESSY);
 
   const roleLabels = {
     society: "Housing Society / RWA",
@@ -177,12 +218,10 @@ function renderWorkspace() {
   badge.style.background = getColor(activeZone.pm25);
   badge.textContent = activeZone.pm25 > 120 ? "HIGH HOTSPOT ALERT" : activeZone.pm25 > 60 ? "MODERATE / POOR" : "SAFE AIR";
 
-  // Delta comparison against previous brief
   const diff = activeZone.pm25 - activeZone.prevPm25;
   document.getElementById("deltaBox").textContent =
     `🔄 Comparison with Previous Brief: PM2.5 ${diff >= 0 ? "worsened by +" + diff : "improved by " + diff} µg/m³ (Previous: ${activeZone.prevPm25} µg/m³ → Current: ${activeZone.pm25} µg/m³).`;
 
-  // Plain language summary + Traceable Row Badges
   document.getElementById("plainSummary").textContent =
     `Primary pollution driver: ${activeZone.hotspot}. Fine-to-coarse particulate ratio (${(activeZone.pm25 / activeZone.pm10).toFixed(2)}) confirms localized combustion and road dust.`;
 
@@ -190,13 +229,11 @@ function renderWorkspace() {
     `<span class="trace-pill">📌 ${r.rowId} (${r.sensorId}): ${r.pm25 !== null ? r.pm25 + " µg/m³" : "EXCLUDED"}</span>`
   ).join("");
 
-  // Data Gaps & Unreliable Readings Flagged
   const flagged = rows.filter(r => r.status !== "VALID" || r.flag.includes("Converted"));
   document.getElementById("dataGapAlert").innerHTML =
     `<strong>⚠️ Data Hygiene & Reliability Audit:</strong><br>` +
     flagged.map(f => `• <strong>${f.rowId} (${f.sensorId}):</strong> ${f.flag}`).join("<br>");
 
-  // Role-specific prioritized interventions
   const roleActions = {
     society: [
       `Switch security gates to zero-idling delivery mode while PM2.5 is ${activeZone.pm25} µg/m³ (Trace: Row #1)`,
@@ -230,12 +267,10 @@ function renderWorkspace() {
   document.getElementById("actionList").innerHTML =
     (roleActions[userProfile.role] || roleActions.society).map(a => `<li>${a}</li>`).join("");
 
-  // Internal Operational Briefing Note
   document.getElementById("internalBriefText").textContent =
     `[INTERNAL MEMO • ${activeZone.id}] Current PM2.5 is ${activeZone.pm25} µg/m³ (Delta: ${diff >= 0 ? "+" + diff : diff} µg/m³ vs prior brief). ` +
     `${flagged.length} sensor anomalies/conversions isolated (${flagged.map(f => f.sensorId).join(", ")}). Assigned ${roleLabels[userProfile.role]} interventions active.`;
 
-  // Age-Calibrated & Language-Aware Citizen Advisory
   const ageCareMap = {
     child: `[Child-Friendly • Simple Level] Today's air in ${activeZone.name} has dust and smoke (PM2.5: ${activeZone.pm25}). Play indoor games during recess, drink extra water, and tell a teacher or parent if your throat feels scratchy!`,
     adult: `[Standard Citizen Advisory] Air quality in ${activeZone.name} is at PM2.5 ${activeZone.pm25} µg/m³ due to ${activeZone.hotspot}. Limit heavy outdoor jogging, wear an N95 mask on two-wheelers, and keep car AC on recirculate.`,
@@ -247,13 +282,13 @@ function renderWorkspace() {
   document.getElementById("citizenAdvisoryText").textContent = ageCareMap[userProfile.ageGroup];
 }
 
-// 4. GEMINI AI LIVE RUN FOR MESSY DATA & MULTI-LANGUAGE GENERATION
 async function handleRunGeminiAI() {
   const btn = document.getElementById("runAiBtn");
   btn.textContent = "⏳ Gemini AI Interpreting Messy Data...";
 
   try {
-    const rows = parseMessyTable(document.getElementById("messyInput").value);
+    const rows = parseMessyTableLocal(document.getElementById("messyInput").value);
+    const { generateCivicIntelligence } = await import("./aiEngine.js");
     const aiOut = await generateCivicIntelligence({
       apiKey: userProfile.apiKey,
       zone: activeZone,
@@ -279,7 +314,6 @@ async function handleRunGeminiAI() {
   }
 }
 
-// 5. WHATSAPP WEB ONE-CLICK LAUNCHER
 function shareToWhatsAppWeb() {
   const message =
     `*BreatheOps AI Civic Alert — ${activeZone.name}*\n` +
@@ -291,12 +325,7 @@ function shareToWhatsAppWeb() {
   window.open(waUrl, "_blank", "noopener,noreferrer");
 }
 
-// 6. APPLY ONBOARDING PROFILE & CLOSE MODAL WITHOUT REFRESHING
-function applyOnboardingProfile(event) {
-  if (event && typeof event.preventDefault === "function") {
-    event.preventDefault();
-  }
-
+window.applyOnboardingProfile = function () {
   userProfile = {
     role: document.getElementById("setupRole").value,
     zoneId: document.getElementById("setupZone").value,
@@ -306,8 +335,13 @@ function applyOnboardingProfile(event) {
   };
 
   activeZone = ZONES.find(z => z.id === userProfile.zoneId) || ZONES[0];
-  document.getElementById("onboardingModal").classList.add("hidden");
+  const modal = document.getElementById("onboardingModal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.style.display = "none";
+  }
 
+  initMap();
   if (mapInstance) {
     setTimeout(() => {
       mapInstance.invalidateSize();
@@ -321,7 +355,7 @@ function applyOnboardingProfile(event) {
   if (userProfile.apiKey && userProfile.language !== "English") {
     handleRunGeminiAI();
   }
-}
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   const messyEl = document.getElementById("messyInput");
@@ -330,17 +364,6 @@ window.addEventListener("DOMContentLoaded", () => {
   initMap();
   syncLiveSatelliteAir();
 
-  // Attach to button AND form so neither can ever cause a page reload
-  const openBtn = document.getElementById("openDashboardBtn");
-  if (openBtn) openBtn.addEventListener("click", applyOnboardingProfile);
-
-  const formEl = document.getElementById("onboardingForm");
-  if (formEl) formEl.addEventListener("submit", applyOnboardingProfile);
-
-  document.getElementById("changeProfileBtn")?.addEventListener("click", () => {
-    document.getElementById("onboardingModal").classList.remove("hidden");
-  });
-
   document.getElementById("refreshLiveBtn")?.addEventListener("click", syncLiveSatelliteAir);
   document.getElementById("runAiBtn")?.addEventListener("click", handleRunGeminiAI);
   document.getElementById("whatsappWebBtn")?.addEventListener("click", shareToWhatsAppWeb);
@@ -348,9 +371,5 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("copyBtn")?.addEventListener("click", () => {
     navigator.clipboard.writeText(document.getElementById("citizenAdvisoryText").textContent);
     alert("Advisory copied to clipboard!");
-  });
-
-  document.getElementById("contrastBtn")?.addEventListener("click", () => {
-    document.body.classList.toggle("high-contrast");
   });
 });
