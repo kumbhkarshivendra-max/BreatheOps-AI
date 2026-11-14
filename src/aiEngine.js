@@ -1,11 +1,9 @@
-import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
-
 export async function generateCivicIntelligence({ apiKey, zone, profile, normalizedRows, previousBrief }) {
   if (!apiKey) {
     throw new Error("Gemini API Key is required. Paste your free AIza... key in the configuration popup.");
   }
 
-  // 1. ZERO-TOKEN CACHE CHECK: Never spend tokens twice for the same zone + role + language + data
+  // 1. ZERO-TOKEN CACHE CHECK
   const cacheSignature = JSON.stringify({
     z: zone.id,
     pm: zone.pm25,
@@ -20,6 +18,8 @@ export async function generateCivicIntelligence({ apiKey, zone, profile, normali
     return JSON.parse(cachedResult);
   }
 
+  // 2. LAZY-LOAD SDK ONLY ON DEMAND (Prevents blocking page startup!)
+  const { GoogleGenAI, Type } = await import("https://esm.run/@google/genai");
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
@@ -66,7 +66,6 @@ RULES:
     ]
   };
 
-  // 2. UPDATED MODEL WATERFALL: Uses gemini-3.8-flash and latest Flash-Lite aliases for new keys
   const activeModels = [
     "gemini-3.8-flash",
     "gemini-flash-lite-latest",
