@@ -1,10 +1,9 @@
-import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
-
 export async function generateCivicIntelligence({ apiKey, zone, profile, normalizedRows, previousPm25 }) {
   if (!apiKey) {
     throw new Error("Please click 'Change Profile / Language' at the top and paste your free Gemini API key first.");
   }
 
+  const { GoogleGenAI, Type } = await import("https://esm.run/@google/genai");
   const ai = new GoogleGenAI({ apiKey });
 
   const readingLevelMap = {
