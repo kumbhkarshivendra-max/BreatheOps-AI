@@ -1,59 +1,49 @@
 # BreatheOps AI — Civic Air Quality Intelligence Platform
 
-> **Prompt Wars Submission** • An AI-driven civic intelligence web application that transforms raw, irregular air quality data and messy sensor feeds into traceable, role-specific recurring operational interventions and age-calibrated multi-language citizen advisories.
+BreatheOps AI is an AI-driven civic intelligence web application that empowers local municipal authorities, housing societies (RWAs), schools, ward-level field teams, and outdoor gig workers to turn raw, messy air quality telemetry into traceable, role-specific local interventions.
+
+Built with a modular ES6 architecture, real-time multi-pollutant satellite telemetry (**Open-Meteo API**), dynamic street-level neighbourhood discovery (**Photon / OpenStreetMap**), and **Google Gemini (`@google/genai` SDK)** with strict structured JSON schemas.
 
 ---
 
-## 🚀 Live Demo & Access
-* **Live GitHub Pages URL:** `https://kumbhkarshivendra-max.github.io/BreatheOps-AI/`
-* **Zero Installation:** Runs entirely inside any modern web browser. No local servers or installations required.
+## 🎯 Problem Statement Alignment
+
+1. **Generative AI Messy Table Interpreter (`src/aiEngine.js` & `src/dataNormalizer.js`)**
+   - Uses the official `@google/genai` SDK (`gemini-3.8-flash` / `gemini-flash-lite-latest`) with `responseSchema` enforcement.
+   - Parses irregular CSV, pipe (`|`), and tab-delimited tables containing mixed units (`mg/m³`, `ppm`, `µg/m³`), missing tokens (`N/A`, `-`, `null`), and hardware voltage spikes (`-999 µg/m³`).
+   - Automatically normalizes units to `µg/m³` and isolates faulty sensor rows so bad data never corrupts local AQI averages.
+
+2. **Traceable Findings & Data Hygiene Audit**
+   - Every plain-language trend and hotspot attribution is linked to specific `Row #` and `Sensor_ID` badges inside the **Sensor Proof & Data Audit** modal.
+   - Infers localized emission sources dynamically by analysing real multi-pollutant ratios ($PM_{2.5}/PM_{10}$ coarse dust ratios, $NO_2$ vehicular traffic spikes, and $SO_2/CO$ combustion signatures).
+
+3. **Role-Scoped & Jurisdiction-Locked Interventions**
+   - Tailors 6 jargon-free, actionable local interventions based on who is asking:
+     - **🏠 Housing Society / RWA (Zone-Locked):** Gate zero-idling rules, wet mopping, generator test rescheduling.
+     - **🎒 School Principal / Parent (Zone-Locked):** Indoor assembly triggers, bus dispersal staggering, infirmary inhaler readiness.
+     - **🧹 Ward-Level Field Officer (Zone-Locked):** Open waste-burning patrols, water-tanker dust suppression, sensor wire checks.
+     - **🛵 Outdoor Gig / Delivery Worker (Zone-Locked):** N95 route protection, shaded hydration breaks, signal engine-off habits.
+     - **🏛️ Municipal Authority (City-Wide Access):** Anti-smog cannon deployment, heavy freight diversion, construction site enforcement.
+
+4. **Brief-to-Brief Delta Comparison**
+   - Stores previous zone baselines in browser storage and compares every new briefing against prior readings to highlight exact improvements or deteriorations.
+
+5. **Dual Deliverable Output: Internal Briefing Note + Multi-Language Citizen Advisory**
+   - Generates both an official **Internal Operational Briefing Note** and a **Public Citizen & Vulnerable-Group Advisory** across **13+ Indian and global languages** (English, Hindi, Marathi, Tamil, Telugu, Bengali, Gujarati, Kannada, Malayalam, Punjabi, Urdu, Spanish, French).
+   - Adapts reading levels for **Children (Grade-4 level)**, **Adult Commuters**, and **Older Adults / Respiratory-Sensitive Citizens (60+)**, complete with one-click **WhatsApp Web (`web.whatsapp.com`)** group broadcast formatting.
 
 ---
 
-## 🔑 Quick Demo Login Credentials (Password: `admin`)
+## 🗂️ Modular Repository Structure
 
-Access is strictly secured and scoped by **Civic Group**, **Assigned Zone**, and **User Age**:
-
-| Role / Civic Group | Username | Password | Access Scope & Jurisdiction |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `super` | `admin` | **All Zones** (City-wide municipal command & user management) |
-| **Local Authority** | `authority1` | `admin` | **All Zones** (Municipal enforcement & heavy equipment deployment) |
-| **Housing Society** | `society1` | `admin` | **Zone 2 Only** (Emerald Greens Housing Society micro-controls) |
-| **Ward-Level Team** | `ward1` | `admin` | **Zone 3 Only** (Central Market Ward 4 patrols & waste enforcement) |
-| **School Admin** | `school1` | `admin` | **Zone 4 Only** (Sunrise School campus student safety & air purification) |
-
-*(Tip: You can also register a brand new user on the login screen with custom **Age** and **Zone** bounds to test dynamic age-calibrated advisories!)*
-
----
-
-## 🧠 How the Solution Works (Core Architecture)
-
-BreatheOps AI operates on a robust **3-Tier Civic Intelligence Pipeline**:
-
-1. **Live Data Ingestion & Offline Resilience:**
-   * Automatically queries real-time particulate and gas telemetry (`PM2.5`, `PM10`, `NO2`) via the **Open-Meteo Air Quality API**.
-   * Features an intelligent offline fallback mode to guarantee 100% uptime during live competition judging.
-
-2. **Messy Data & Complaint Table Normalization Engine:**
-   * Users can paste or upload irregular CSV/text tables containing mixed units (`mg/m³`, `ppm`, `µg/m³`), missing values (`N/A`, `-`, `null`), or extreme sensor outliers.
-   * The AI normalizes units to standard `µg/m³`, flags data gaps, isolates faulty sensors, and logs every adjustment in an **Audit Ledger** for 100% traceability.
-
-3. **Role-Based & Age-Aware Interventions:**
-   * **Local Authorities** receive heavy-duty municipal orders (anti-smog cannons, construction halts, freight traffic rerouting).
-   * **Housing Societies** receive preventative micro-controls (perimeter misting, DG generator runtime limits, basement idling bans).
-   * **Ward Teams** receive ground-level enforcement tasks (open-waste burning patrols, unpaved shoulder watering).
-   * **Schools & Vulnerable Groups** receive age-calibrated health notices (indoor assembly protocols, asthma inhaler readiness).
-
----
-
-## 🌐 Multi-Language & Accessibility Features
-* **Universal Language Bridge:** Instantly translates citizen advisories across English, Hindi (`हिन्दी`), Marathi (`मराठी`), Spanish (`Español`), Bengali, and Tamil.
-* **Accessibility Suite:** Includes a high-contrast theme toggle, scalable large text mode, and keyboard-navigational ARIA design.
-* **Automated System Self-Tests:** Built-in diagnostic suite verifying unit normalization math, RBAC zone isolation, and API security hygiene.
-
----
-
-## 🛠️ Tech Stack
-* **Frontend:** Pure HTML5, Modern CSS3 (Grid/Flexbox variables), and Vanilla JavaScript (ES6+).
-* **Hosting:** Static cloud deployment via GitHub Pages.
-* **Security:** Zero hardcoded API keys; designed with a secure session-storage slot for future LLM integrations.
+```text
+├── index.html               # Semantic HTML5 workspace, ARIA live regions & modal dialogs
+├── styles.css               # Responsive layout & WCAG High-Contrast theme variables
+├── package.json             # Project manifest (@google/genai, leaflet, vitest)
+├── README.md                # System architecture & judge evaluation guide
+├── src/
+│   ├── app.js               # Leaflet GIS controller, live telemetry sync & UI state
+│   ├── aiEngine.js          # Official @google/genai SDK integration, JSON schema & caching
+│   └── dataNormalizer.js    # Unit conversion (mg/m3, ppm -> ug/m3) & outlier isolation
+└── tests/
+    └── normalizer.test.js   # Automated Vitest unit test suite for data normalization
