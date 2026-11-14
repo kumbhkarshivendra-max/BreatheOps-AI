@@ -10,18 +10,18 @@
 </head>
 <body>
 
-  <!-- STEP 1: ONBOARDING POPUP (SCOPES DATA BY ROLE, ZONE, AGE & LANGUAGE) -->
+  <!-- STEP 1: ONBOARDING POPUP (ZERO-REFRESH VERSION) -->
   <div id="onboardingModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
       <span class="brand-badge">BREATHEOPS AI</span>
       <h1 id="modalTitle">Personalize Your Civic Air Workspace</h1>
       <p class="muted">We filter the map and actions so you only see what matters for your role, zone, age, and language.</p>
 
-      <form id="onboardingForm">
+      <div id="onboardingForm">
         <div class="form-grid">
           <div>
             <label for="setupRole">1. Who are you?</label>
-            <select id="setupRole" required>
+            <select id="setupRole">
               <option value="society">🏠 Housing Society / RWA Secretary</option>
               <option value="school">🎒 School Principal / Teacher / Parent</option>
               <option value="ward">🧹 Ward-Level Field Officer</option>
@@ -32,9 +32,9 @@
 
           <div>
             <label for="setupZone">2. Your Local Area (Zone Lock)</label>
-            <select id="setupZone" required>
+            <select id="setupZone">
               <option value="Z1">Zone 1: Industrial & Transit Corridor</option>
-              <option value="Z2">Zone 2: Green Valley Housing Enclave</option>
+              <option value="Z2" selected>Zone 2: Green Valley Housing Enclave</option>
               <option value="Z3">Zone 3: Central Market Ward 4</option>
               <option value="Z4">Zone 4: Sunrise School & Hospital District</option>
             </select>
@@ -42,7 +42,7 @@
 
           <div>
             <label for="setupAge">3. Your Age & Reading Level</label>
-            <select id="setupAge" required>
+            <select id="setupAge">
               <option value="child">👶 Child / Student (Under 14 • Simple Grade-4 Words)</option>
               <option value="adult" selected>🧑 Adult Citizen / Officer (15–59 • Standard Clear)</option>
               <option value="senior">🧓 Older Adult / Sensitive Lungs (60+ • Extra Care)</option>
@@ -51,7 +51,7 @@
 
           <div>
             <label for="setupLang">4. Preferred Language</label>
-            <select id="setupLang" required>
+            <select id="setupLang">
               <option value="English">English</option>
               <option value="Hindi">हिन्दी (Hindi)</option>
               <option value="Marathi">मराठी (Marathi)</option>
@@ -65,8 +65,10 @@
           <input type="password" id="setupApiKey" placeholder="Paste AIza... key from aistudio.google.com" />
         </div>
 
-        <button type="submit" class="btn-primary full-width">🚀 Open My Personalized Air Dashboard</button>
-      </form>
+        <button type="button" id="openDashboardBtn" class="btn-primary full-width">
+          🚀 Open My Personalized Air Dashboard
+        </button>
+      </div>
     </div>
   </div>
 
@@ -88,7 +90,6 @@
 
   <!-- MAIN WORKSPACE -->
   <main class="main-grid" role="main">
-    <!-- LEFT: LIVE MAP -->
     <section class="card map-card" aria-label="Live Air Quality Map">
       <div class="card-header">
         <h2>📍 Live Satellite & Sensor Map</h2>
@@ -103,7 +104,6 @@
       </div>
     </section>
 
-    <!-- RIGHT: SCOPED BRIEFING & ACTIONS -->
     <section class="card action-card" aria-live="polite">
       <div class="zone-header">
         <div>
@@ -117,10 +117,8 @@
         </div>
       </div>
 
-      <!-- REQUIREMENT: Compare new brief with previous brief -->
       <div id="deltaBox" class="delta-banner"></div>
 
-      <!-- REQUIREMENT: Traceable findings + Data Gaps & Unreliable Readings Flagged -->
       <div class="info-block">
         <h3>🔍 Plain-Language Trend & Traceable Source</h3>
         <p id="plainSummary"></p>
@@ -128,13 +126,11 @@
         <div id="dataGapAlert" class="gap-alert"></div>
       </div>
 
-      <!-- REQUIREMENT: Prioritized Local Actions suited to who is asking -->
       <div class="info-block highlight">
         <h3 id="roleActionHeading">✅ Prioritized Actions for Your Role</h3>
         <ul id="actionList" class="clean-list"></ul>
       </div>
 
-      <!-- REQUIREMENT: BOTH Internal Briefing Note AND Citizen Advisory -->
       <div class="two-col-notes">
         <div class="info-block internal-note">
           <h3>📋 Internal Operational Briefing Note</h3>
@@ -151,7 +147,6 @@
         </div>
       </div>
 
-      <!-- MESSY DATA INTERPRETER DRAWER -->
       <details class="advanced-drawer">
         <summary>🧪 Paste or Upload Messy Sensor Data Table (Mixed Units / Missing Readings)</summary>
         <div class="drawer-body">
