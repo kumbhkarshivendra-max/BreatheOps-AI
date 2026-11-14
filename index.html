@@ -3,109 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BreatheOps AI — Visual Civic Air Quality Guide</title>
-  <!-- Free Interactive Map Library (Leaflet.js) -->
+  <title>BreatheOps AI — Live Civic Air Intelligence</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- STEP 1: ONBOARDING POPUP (SCOPES DATA BY ROLE, ZONE, AGE & LANGUAGE) -->
+  <div id="onboardingModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <span class="brand-badge">BREATHEOPS AI</span>
+      <h1 id="modalTitle">Personalize Your Civic Air Workspace</h1>
+      <p class="muted">We filter the map and actions so you only see what matters for your role, zone, age, and language.</p>
+
+      <form id="onboardingForm">
+        <div class="form-grid">
+          <div>
+            <label for="setupRole">1. Who are you?</label>
+            <select id="setupRole" required>
+              <option value="society">🏠 Housing Society / RWA Secretary</option>
+              <option value="school">🎒 School Principal / Teacher / Parent</option>
+              <option value="ward">🧹 Ward-Level Field Officer</option>
+              <option value="authority">🏛️ Municipal Authority (All Zones)</option>
+              <option value="gig_worker">🛵 Outdoor Delivery / Gig Worker</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="setupZone">2. Your Local Area (Zone Lock)</label>
+            <select id="setupZone" required>
+              <option value="Z1">Zone 1: Industrial & Transit Corridor</option>
+              <option value="Z2">Zone 2: Green Valley Housing Enclave</option>
+              <option value="Z3">Zone 3: Central Market Ward 4</option>
+              <option value="Z4">Zone 4: Sunrise School & Hospital District</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="setupAge">3. Your Age & Reading Level</label>
+            <select id="setupAge" required>
+              <option value="child">👶 Child / Student (Under 14 • Simple Grade-4 Words)</option>
+              <option value="adult" selected>🧑 Adult Citizen / Officer (15–59 • Standard Clear)</option>
+              <option value="senior">🧓 Older Adult / Sensitive Lungs (60+ • Extra Care)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="setupLang">4. Preferred Language</label>
+            <select id="setupLang" required>
+              <option value="English">English</option>
+              <option value="Hindi">हिन्दी (Hindi)</option>
+              <option value="Marathi">मराठी (Marathi)</option>
+              <option value="Tamil">தமிழ் (Tamil)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="api-setup">
+          <label for="setupApiKey">5. Gemini API Key (Optional now — required for live AI custom table runs)</label>
+          <input type="password" id="setupApiKey" placeholder="Paste AIza... key from aistudio.google.com" />
+        </div>
+
+        <button type="submit" class="btn-primary full-width">🚀 Open My Personalized Air Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOP NAVIGATION BAR -->
   <header class="topbar" role="banner">
     <div class="brand">
       <span class="brand-badge">BREATHEOPS AI</span>
       <div>
-        <strong>Visual Civic Air Assistant</strong>
-        <span class="subtitle">Click any map zone for simple, AI-verified local actions</span>
+        <strong id="activeProfileSummary">Civic Air Assistant</strong>
+        <span class="subtitle" id="liveSyncStatus">📡 Syncing live satellite air telemetry...</span>
       </div>
     </div>
 
-    <div class="controls" role="region" aria-label="Settings and Accessibility">
-      <label for="roleSelect" class="sr-only">Who are you?</label>
-      <select id="roleSelect" aria-label="Select your civic role">
-        <option value="society">🏠 Housing Society Resident / RWA</option>
-        <option value="school">🎒 School Principal / Parent</option>
-        <option value="ward">🧹 Ward Field Officer</option>
-        <option value="authority">🏛️ Municipal Authority</option>
-        <option value="gig_worker">🛵 Outdoor Delivery / Gig Worker</option>
-      </select>
-
-      <label for="langSelect" class="sr-only">Select Language</label>
-      <select id="langSelect" aria-label="Select language">
-        <option value="English">English</option>
-        <option value="Hindi">हिन्दी (Hindi)</option>
-        <option value="Marathi">मराठी (Marathi)</option>
-        <option value="Tamil">தமிழ் (Tamil)</option>
-      </select>
-
-      <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key..." aria-label="Gemini API Key" />
-      <button type="button" class="btn-outline" id="contrastBtn" aria-pressed="false">◐ Contrast</button>
+    <div class="controls">
+      <button type="button" class="btn-outline" id="changeProfileBtn">⚙️ Change Profile / Language</button>
+      <button type="button" class="btn-outline" id="contrastBtn" aria-pressed="false">◐ High Contrast</button>
     </div>
   </header>
 
+  <!-- MAIN WORKSPACE -->
   <main class="main-grid" role="main">
-    <!-- LEFT COLUMN: INTERACTIVE VISUAL MAP -->
-    <section class="card map-card" aria-label="Interactive Air Quality Map">
+    <!-- LEFT: LIVE MAP -->
+    <section class="card map-card" aria-label="Live Air Quality Map">
       <div class="card-header">
-        <h2>📍 Live Neighbourhood Air Map</h2>
-        <span class="legend">
-          <span class="dot good"></span> Safe
-          <span class="dot mod"></span> Moderate
-          <span class="dot poor"></span> Poor
-          <span class="dot severe"></span> Severe
-        </span>
+        <h2>📍 Live Satellite & Sensor Map</h2>
+        <button type="button" class="btn-outline btn-sm" id="refreshLiveBtn">↻ Refresh Live Air</button>
       </div>
-      <div id="airMap" class="map-box" role="application" aria-label="Interactive Zone Map"></div>
-      <p class="helper-text">👆 Tap any coloured circle on the map to inspect that area's air and get simple actions.</p>
+      <div id="airMap" class="map-box" role="application" aria-label="Interactive Air Quality Map"></div>
+      <div class="legend">
+        <span><i class="dot good"></i> Good/Mod (≤60)</span>
+        <span><i class="dot mod"></i> Poor (61–100)</span>
+        <span><i class="dot poor"></i> Very Poor (101–150)</span>
+        <span><i class="dot severe"></i> Severe (150+)</span>
+      </div>
     </section>
 
-    <!-- RIGHT COLUMN: SIMPLE, UNCLUTTERED ACTION CARD -->
+    <!-- RIGHT: SCOPED BRIEFING & ACTIONS -->
     <section class="card action-card" aria-live="polite">
       <div class="zone-header">
         <div>
-          <span id="zoneBadge" class="badge severe">SEVERE AIR ALERT</span>
-          <h2 id="zoneTitle">Zone 1: North Industrial Corridor</h2>
+          <span id="zoneBadge" class="badge">LOADING</span>
+          <h2 id="zoneTitle">Select a Zone</h2>
+          <small id="zoneCoords" class="muted"></small>
         </div>
         <div class="big-aqi">
-          <span id="zonePmValue">168</span>
-          <small>PM2.5 (µg/m³)</small>
+          <span id="zonePmValue">--</span>
+          <small>Live PM2.5 (µg/m³)</small>
         </div>
       </div>
 
-      <!-- Delta comparison pill -->
-      <div id="deltaBox" class="delta-banner">
-        🔄 Compared to last brief: PM2.5 rose by +30 µg/m³ due to morning traffic & dust.
+      <!-- REQUIREMENT: Compare new brief with previous brief -->
+      <div id="deltaBox" class="delta-banner"></div>
+
+      <!-- REQUIREMENT: Traceable findings + Data Gaps & Unreliable Readings Flagged -->
+      <div class="info-block">
+        <h3>🔍 Plain-Language Trend & Traceable Source</h3>
+        <p id="plainSummary"></p>
+        <div id="traceableBadges" class="badge-row"></div>
+        <div id="dataGapAlert" class="gap-alert"></div>
       </div>
 
-      <!-- Simple 3-Card Summary (No clutter!) -->
-      <div class="simple-sections">
-        <div class="info-block">
-          <h3>🔍 What is happening here?</h3>
-          <p id="plainSummary">Heavy truck exhaust and road dust near Gate 4 are trapping smoke close to the ground.</p>
-          <small id="dataCitation" class="citation">Traceable Source: Sensor S-101 (Row #1) • Converted 0.168 mg/m³ → 168 µg/m³</small>
-        </div>
-
-        <div class="info-block highlight">
-          <h3 id="actionHeader">✅ Top 3 Actions for You Right Now</h3>
-          <ul id="actionList" class="clean-list"></ul>
-        </div>
-
-        <div class="info-block care-block">
-          <h3>❤️ Vulnerable Groups & WhatsApp Advisory</h3>
-          <p id="careAdvisory"></p>
-          <button type="button" class="btn-primary" id="copyBtn">📲 Copy Simple Advisory for WhatsApp</button>
-        </div>
+      <!-- REQUIREMENT: Prioritized Local Actions suited to who is asking -->
+      <div class="info-block highlight">
+        <h3 id="roleActionHeading">✅ Prioritized Actions for Your Role</h3>
+        <ul id="actionList" class="clean-list"></ul>
       </div>
 
-      <!-- PROGRESSIVE DISCLOSURE: Messy Data Upload hidden neatly until clicked -->
-      <details class="advanced-drawer">
-        <summary>⚙️ Have new sensor readings or messy CSV data? Click to analyze with Gemini AI</summary>
-        <div class="drawer-body">
-          <label for="messyInput">Paste messy table (mixed units like mg/m³, N/A gaps, or complaints):</label>
-          <textarea id="messyInput" rows="5"></textarea>
-          <div class="drawer-actions">
-            <button type="button" class="btn-primary" id="runAiBtn">✨ Run Gemini AI Analysis</button>
+      <!-- REQUIREMENT: BOTH Internal Briefing Note AND Citizen Advisory -->
+      <div class="two-col-notes">
+        <div class="info-block internal-note">
+          <h3>📋 Internal Operational Briefing Note</h3>
+          <p id="internalBriefText"></p>
+        </div>
+
+        <div class="info-block citizen-note">
+          <h3 id="advisoryHeading">📢 Citizen & Vulnerable Advisory</h3>
+          <p id="citizenAdvisoryText"></p>
+          <div class="share-row">
+            <button type="button" class="btn-whatsapp" id="whatsappWebBtn">🟢 Share on WhatsApp Web</button>
+            <button type="button" class="btn-outline btn-sm" id="copyBtn">📋 Copy Text</button>
           </div>
-          <div id="dataFlagsBox" class="flags-box"></div>
+        </div>
+      </div>
+
+      <!-- MESSY DATA INTERPRETER DRAWER -->
+      <details class="advanced-drawer">
+        <summary>🧪 Paste or Upload Messy Sensor Data Table (Mixed Units / Missing Readings)</summary>
+        <div class="drawer-body">
+          <p class="muted">Paste messy rows (`mg/m³`, `ppm`, `N/A`, `-999` glitches). Gemini AI normalizes units, flags bad sensors, compares against the previous brief, and updates your notes above.</p>
+          <textarea id="messyInput" rows="5" aria-label="Messy air quality data input"></textarea>
+          <button type="button" class="btn-primary" id="runAiBtn">✨ Interpret Messy Data with Gemini AI</button>
         </div>
       </details>
     </section>
