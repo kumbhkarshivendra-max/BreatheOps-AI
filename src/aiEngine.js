@@ -1,34 +1,33 @@
 export async function generateCivicIntelligence({ apiKey, zone, profile, normalizedRows, previousPm25 }) {
   if (!apiKey) {
-    throw new Error("Please click 'Change Profile / Language' at the top and paste your free Gemini API key first.");
+    throw new Error("Please click 'Change Area / Role' at the top and paste your free Gemini API key first.");
   }
 
   const { GoogleGenAI, Type } = await import("https://esm.run/@google/genai");
   const ai = new GoogleGenAI({ apiKey });
 
   const readingLevelMap = {
-    child: "Simple Grade-4 Child-Friendly level (extra care for young lungs and school play)",
-    adult: "Standard Clear Public level (commuters, parents, and working adults)",
-    senior: "Older Adult & Respiratory-Sensitive High-Care level (60+ seniors, asthma/COPD patients)"
+    child: "Simple Grade-4 Child-Friendly level (warm, protective, easy words for school kids)",
+    adult: "Standard Clear Public level (direct, practical everyday language)",
+    senior: "Older Adult & Sensitive Lungs High-Care level (gentle, clear, health-first guidance)"
   };
 
   const prompt = `
-You are BreatheOps AI, an expert Civic Air Quality Intelligence System.
-Analyze the live satellite telemetry and normalized messy sensor table below:
+You are BreatheOps AI, a friendly Civic Air Quality Assistant.
+Analyze the local air quality situation and generate a response ENTIRELY in ${profile.language} (Universal Translation Mode).
 
-ZONE: ${zone.name} (Live PM2.5: ${zone.pm25} µg/m³, PM10: ${zone.pm10} µg/m³, NO2: ${zone.no2} µg/m³)
-PREVIOUS BRIEF PM2.5: ${previousPm25} µg/m³
+LOCALITY: ${zone.name}
 ASKING USER ROLE: ${profile.role}
-TARGET LANGUAGE: ${profile.language}
 TARGET AUDIENCE & READING LEVEL: ${readingLevelMap[profile.ageGroup]}
-NORMALIZED SENSOR & COMPLAINT TABLE: ${JSON.stringify(normalizedRows)}
+PREVIOUS READING VS CURRENT: Was ${previousPm25}, now ${zone.pm25}
+NORMALIZED SENSOR TABLE: ${JSON.stringify(normalizedRows)}
 
-REQUIREMENTS:
-1. Compare this brief with the Previous Brief (${previousPm25} -> ${zone.pm25} µg/m³) to explain what changed.
-2. Summarize trends and likely hotspots in plain language, citing specific Row # and Sensor IDs.
-3. Explicitly list every flagged data gap (N/A), unit conversion (mg/m³ -> µg/m³), and rejected sensor outlier.
-4. Recommend 3 prioritized local interventions tailored strictly to what a "${profile.role}" can do.
-5. Generate BOTH an "internalBriefingNote" (for civic/operational logging) AND a "citizenAdvisory" written in ${profile.language} at the requested reading level, with extra care for children, older adults, sensitive groups, and outdoor gig workers.
+STRICT RULES:
+1. Write "deltaSummary", "plainSummary", "prioritizedActions", and "citizenAdvisory" naturally in ${profile.language}.
+2. Provide 6 specific, practical "prioritizedActions" tailored strictly to what a "${profile.role}" can do right now.
+3. DO NOT include technical chemical names, numbers, or units (NO "PM2.5", "PM10", "NO2", or "µg/m³") inside "prioritizedActions" or "citizenAdvisory" — write pure, easy-to-follow human actions.
+4. Keep technical sensor IDs and unit conversion flags strictly inside "citations" and "dataQualityFlags" (for the hidden audit popup).
+5. Generate an "internalBriefingNote" for official municipal/ward records.
 `;
 
   const response = await ai.models.generateContent({
