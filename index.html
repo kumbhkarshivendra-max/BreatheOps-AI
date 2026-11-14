@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VayuPulse AI — Civic Air Quality Intelligence Platform</title>
+  <title>BreatheOps AI — Civic Air Quality Intelligence Platform</title>
   <style>
     :root {
       --bg: #f4f7fb;
@@ -71,7 +71,6 @@
       transition: background 0.2s, color 0.2s;
     }
 
-    /* Accessibility focus */
     :focus-visible {
       outline: 3px solid var(--primary);
       outline-offset: 2px;
@@ -88,7 +87,6 @@
       border: 0;
     }
 
-    /* Layout & Cards */
     .container {
       max-width: 1320px;
       margin: 0 auto;
@@ -116,7 +114,6 @@
       gap: 14px;
     }
 
-    /* Buttons & Inputs */
     button, select, input, textarea {
       font-family: inherit;
       font-size: inherit;
@@ -171,7 +168,6 @@
       font-size: 0.92em;
     }
 
-    /* Top Header */
     header.topbar {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -239,7 +235,6 @@
       color: var(--mod);
     }
 
-    /* Login Screen */
     .login-wrapper {
       min-height: 100vh;
       display: flex;
@@ -275,7 +270,6 @@
       font-weight: 500;
     }
 
-    /* Navigation Tabs */
     .tabs {
       display: flex;
       flex-wrap: wrap;
@@ -304,7 +298,6 @@
       color: #000000;
     }
 
-    /* AQI Badges */
     .aqi-tag {
       display: inline-block;
       padding: 3px 10px;
@@ -392,7 +385,7 @@
   <header class="topbar" role="banner">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="brand-badge">VAYUPULSE AI</span>
+        <span class="brand-badge">BREATHEOPS AI</span>
         <div>
           <strong style="display:block; font-size:1.05em;">Civic Air Quality Intelligence</strong>
           <span style="font-size:0.8em; color:var(--text-muted);">Prompt Wars Edition • Traceable GenAI Interventions</span>
@@ -423,7 +416,7 @@
   <main id="loginView" class="login-wrapper" role="main">
     <div class="login-box">
       <div>
-        <h1 style="margin-top:0;">Civic Intelligence Login</h1>
+        <h1 style="margin-top:0;">BreatheOps AI Login</h1>
         <p style="color:var(--text-muted); margin-bottom:18px;">
           Access is strictly scoped by <strong>Civic Group</strong>, <strong>Assigned Zone</strong>, and <strong>User Age</strong> to deliver safe, role-appropriate interventions.
         </p>
@@ -558,35 +551,27 @@
 
     <!-- TAB 1: INTELLIGENCE BRIEF & RECURRING INTERVENTIONS -->
     <section id="briefTab" role="tabpanel">
-      <!-- Live Zone Metrics Cards -->
       <div class="grid-4" id="zoneCardsGrid"></div>
 
       <div class="grid-2">
-        <!-- Left: Traceable GenAI Findings + Delta Comparison -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0;">GenAI Situation Brief & Traceability</h3>
             <button type="button" class="btn btn-sm" onclick="fetchLiveOpenMeteo()">↻ Sync Live Open-Meteo</button>
           </div>
 
-          <!-- Comparison with Previous Brief -->
           <div class="delta-box" id="deltaSummaryBox"></div>
-
-          <!-- Data Gaps & Unreliable Readings Flagged -->
           <div id="reliabilityFlagsBox"></div>
 
-          <!-- Plain-Language Traceable Findings -->
           <h4>Plain-Language Hotspot & Trend Summary</h4>
           <ul id="traceableFindingsList" style="padding-left:20px;"></ul>
 
-          <!-- Internal Briefing Note -->
           <div style="background:var(--surface-alt); padding:14px; border-radius:8px; margin-top:14px;">
             <strong>Internal Operational Briefing Note:</strong>
             <p id="internalBriefNote" style="margin:6px 0 0 0; font-size:0.93em;"></p>
           </div>
         </div>
 
-        <!-- Right: Role-Specific Recurring Interventions -->
         <div class="card">
           <h3 style="margin-top:0;">Prioritized Recurring Interventions</h3>
           <p style="font-size:0.9em; color:var(--text-muted);" id="recurringSubtitle"></p>
@@ -601,7 +586,7 @@
         <div class="card">
           <h3 style="margin-top:0;">Upload or Paste Messy Field Data & Complaints</h3>
           <p style="font-size:0.9em; color:var(--text-muted);">
-            Paste irregular tables (mixed units like <code>mg/m³</code>, <code>ppm</code>, <code>µg/m³</code>, missing readings <code>N/A</code> / <code>-</code>) or citizen complaints. Our AI normalizes units, flags bad sensors, and updates your active brief.
+            Paste irregular tables (mixed units like <code>mg/m³</code>, <code>ppm</code>, <code>µg/m³</code>, missing readings <code>N/A</code> / <code>-</code>) or citizen complaints. BreatheOps AI normalizes units, flags bad sensors, and updates your active brief.
           </p>
 
           <div style="margin-bottom:10px;">
@@ -690,7 +675,6 @@
         </div>
 
         <div class="grid-2">
-          <!-- Age-Calibrated Personal & Community Action Card -->
           <div style="background:var(--surface-alt); padding:18px; border-radius:10px; border:1px solid var(--border);">
             <span class="aqi-tag aqi-poor" id="advisoryAudienceTag">AGE-CALIBRATED GUIDANCE</span>
             <h4 id="advisoryHeadline" style="margin:10px 0;"></h4>
@@ -699,7 +683,6 @@
             <button type="button" class="btn btn-sm" onclick="copyAdvisoryText()">📋 Copy Public Advisory for WhatsApp / Notice Board</button>
           </div>
 
-          <!-- Extra Care Protocol for Children, Seniors & Sensitive Groups -->
           <div style="background:var(--surface); padding:18px; border-radius:10px; border:1px solid var(--border);">
             <h4 style="margin-top:0; color:var(--severe);">♥ Extra Care Protocol (Children, Older Adults & Respiratory Sensitive)</h4>
             <div id="vulnerableCareList"></div>
@@ -713,7 +696,7 @@
   <!-- DIAGNOSTICS & SELF-TEST MODAL -->
   <dialog id="diagnosticsModal" style="border:1px solid var(--border); border-radius:12px; padding:24px; max-width:650px; width:92%; background:var(--surface); color:var(--text);">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="margin:0;">Automated Civic System & Code Integrity Tests</h3>
+      <h3 style="margin:0;">Automated BreatheOps AI System & Code Integrity Tests</h3>
       <button type="button" class="btn btn-sm" onclick="document.getElementById('diagnosticsModal').close()">✕ Close</button>
     </div>
     <p style="font-size:0.9em; color:var(--text-muted);">
@@ -724,7 +707,7 @@
 
   <script>
     /* ==========================================================================
-       1. DATA & STATE STORE (Clean Separation of Concerns for Code Quality)
+       1. DATA & STATE STORE
        ========================================================================== */
     const ZONES = {
       Z1: {
@@ -866,7 +849,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       document.getElementById("appView").classList.remove("hidden");
       document.getElementById("logoutBtn").classList.remove("hidden");
 
-      // Populate Zone Dropdown strictly enforcing RBAC
       const zoneSelect = document.getElementById("activeZoneSelect");
       zoneSelect.innerHTML = "";
 
@@ -884,7 +866,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       activeZoneId = allowedZoneKeys[0];
       zoneSelect.value = activeZoneId;
 
-      // Update Header Badges
       document.getElementById("userRoleBadge").textContent = currentUser.roleLabel.toUpperCase();
       document.getElementById("userAgeBadge").textContent = `PROFILE AGE: ${currentUser.age} YRS`;
       document.getElementById("welcomeHeading").textContent = `Active Session: ${currentUser.username}`;
@@ -943,7 +924,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
           renderDashboard();
         }
       } catch (err) {
-        // Seamless offline fallback for hackathon reliability
         z.prevPm25 = z.pm25;
         z.pm25 = Math.max(45, z.pm25 + (Math.random() > 0.5 ? 9 : -7));
         z.source = "Cached Govt Baseline (Offline Resilience Mode)";
@@ -959,7 +939,7 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
     }
 
     /* ==========================================================================
-       4. MESSY DATA PARSER & UNIT NORMALIZER (Core GenAI Capability)
+       4. MESSY DATA PARSER & UNIT NORMALIZER
        ========================================================================== */
     function resetSampleMessyData() {
       document.getElementById("messyDataInput").value = SAMPLE_MESSY_DATA;
@@ -992,13 +972,11 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
         return { value: null, flag: `Unreliable Outlier (${rawStr.trim()})` };
       }
 
-      // Unit normalization: convert mg/m3 -> ug/m3 (* 1000)
       if (cleaned.includes("mg/m3") || cleaned.includes("mg/m³")) {
         num = Math.round(num * 1000);
         return { value: num, flag: "Converted mg/m³ → µg/m³" };
       }
 
-      // Assume ug/m3 if unit omitted or explicit
       const unitNote = cleaned.includes("ug") || cleaned.includes("µg") ? "Verified µg/m³" : "Inferred µg/m³ (Unit Missing)";
       return { value: Math.round(num), flag: unitNote };
     }
@@ -1009,7 +987,7 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       parsedAuditRows = [];
 
       lines.forEach((line, idx) => {
-        if (idx === 0 && line.toLowerCase().includes("pm2.5")) return; // skip header
+        if (idx === 0 && line.toLowerCase().includes("pm2.5")) return;
         const delimiter = line.includes("|") ? "|" : ",";
         const cols = line.split(delimiter).map(c => c.trim());
 
@@ -1020,7 +998,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
         const pm10Audit = normalizePollutantValue(cols[3]);
         const complaint = cols[5] || "Routine sensor telemetry";
 
-        // Match zone ID
         let matchedZone = "Z1";
         if (zoneText.toLowerCase().includes("zone 2") || zoneText.toLowerCase().includes("emerald")) matchedZone = "Z2";
         else if (zoneText.toLowerCase().includes("zone 3") || zoneText.toLowerCase().includes("market")) matchedZone = "Z3";
@@ -1042,7 +1019,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
           complaint
         });
 
-        // Update Zone baseline if reliable & within user's allowed scope
         if (pm25Audit.value !== null) {
           ZONES[matchedZone].prevPm25 = ZONES[matchedZone].pm25;
           ZONES[matchedZone].pm25 = pm25Audit.value;
@@ -1066,7 +1042,7 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
 
       parsedAuditRows.forEach(r => {
         if (currentUser && currentUser.assignedZone !== "ALL" && r.matchedZone !== currentUser.assignedZone) {
-          return; // Respect zone isolation in audit table too
+          return;
         }
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1088,7 +1064,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       const z = ZONES[activeZoneId];
       const sev = getSeverityMeta(z.pm25);
 
-      // 1. Delta Comparison vs Previous Brief
       const diff = z.pm25 - z.prevPm25;
       const pct = z.prevPm25 ? Math.round((diff / z.prevPm25) * 100) : 0;
       const direction = diff > 0 ? `▲ Increased by +${diff} µg/m³ (+${pct}%)` : diff < 0 ? `▼ Improved by ${diff} µg/m³ (${pct}%)` : "◆ Unchanged";
@@ -1099,7 +1074,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
         <span class="cite-badge">Baseline vs Current Delta</span>
       `;
 
-      // 2. Data Gaps & Unreliable Sensor Flags
       const zoneAudits = parsedAuditRows.filter(r => r.matchedZone === activeZoneId);
       const flaggedRows = zoneAudits.filter(r => r.flags !== "Clean Telemetry");
       const flagsBox = document.getElementById("reliabilityFlagsBox");
@@ -1115,7 +1089,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
         flagsBox.innerHTML = "";
       }
 
-      // 3. Traceable Findings
       const findings = [
         `Primary hotspot localized around <strong>${z.hotspot}</strong> <span class="cite-badge">${z.source}</span>.`,
         `Current PM2.5 is <strong>${z.pm25} µg/m³</strong> (${sev.label}) and PM10 is <strong>${z.pm10} µg/m³</strong>, indicating ${z.pm10 / z.pm25 > 1.7 ? "coarse road/construction dust dominance" : "fine combustion/vehicular exhaust dominance"} <span class="cite-badge">PM Ratio ${(z.pm10 / z.pm25).toFixed(2)}</span>.`,
@@ -1123,16 +1096,12 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       ];
       document.getElementById("traceableFindingsList").innerHTML = findings.map(f => `<li style="margin-bottom:8px;">${f}</li>`).join("");
 
-      // 4. Internal Briefing Note
       document.getElementById("internalBriefNote").innerHTML = `
         TO: ${currentUser.roleLabel} (${z.name}) | STATUS: ${sev.code}.
-        Immediate recurring mitigation required. All automated unit conversions and excluded outlier rows are logged in the Audit Ledger for compliance sign-off.
+        Immediate recurring mitigation required. All automated unit conversions and excluded outlier rows are logged in the BreatheOps AI Audit Ledger for compliance sign-off.
       `;
 
-      // 5. Role-Specific Recurring Interventions
       renderRecurringActions(z, sev);
-
-      // 6. Refresh Advisories Tab
       renderAdvisories();
     }
 
@@ -1339,7 +1308,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       const readingLevel = document.getElementById("readingLevelSelect").value;
       const lang = document.getElementById("languageSelect").value;
 
-      // Fallback to English pack if a secondary language code is selected
       const pack = TRANSLATIONS[lang] || TRANSLATIONS.en;
       const langNotice = !TRANSLATIONS[lang] ? ` [Translated via Universal Language Bridge: ${lang.toUpperCase()}]` : "";
 
@@ -1367,7 +1335,6 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       const bullets = pack[`${bucket}Bullets`];
       document.getElementById("advisoryBullets").innerHTML = bullets.map(b => `<li style="margin-bottom:8px;">${b}</li>`).join("");
 
-      // Vulnerable Group Care Matrix
       document.getElementById("vulnerableCareList").innerHTML = `
         <div class="flag-box" style="background:var(--mod-bg); border-color:var(--mod);">
           <strong>Children (Ages 5–14):</strong> Higher breathing rate per kg body weight. Strictly replace outdoor sports with indoor hall activities when PM2.5 exceeds 100 µg/m³.
@@ -1385,7 +1352,7 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       const headline = document.getElementById("advisoryHeadline").textContent;
       const body = document.getElementById("advisoryBody").textContent;
       const items = Array.from(document.querySelectorAll("#advisoryBullets li")).map(li => "• " + li.textContent).join("\n");
-      const fullText = `${headline}\n\n${body}\n${items}\n\n— Issued via VayuPulse Civic AI`;
+      const fullText = `${headline}\n\n${body}\n${items}\n\n— Issued via BreatheOps AI`;
       navigator.clipboard?.writeText(fullText);
       alert("Citizen Advisory copied to clipboard! Ready to paste into WhatsApp groups or digital notice boards.");
     }
@@ -1411,7 +1378,7 @@ S-999 | Zone 1: North Industrial | -999 ug/m3 | 14200 ug/m3 | INVALID_TIME | Sen
       const val = document.getElementById("futureGeminiKey").value.trim();
       const pill = document.getElementById("engineStatusPill");
       if (val.length > 8) {
-        sessionStorage.setItem("VAYUPULSE_FUTURE_GEMINI_KEY", val);
+        sessionStorage.setItem("BREATHEOPS_FUTURE_GEMINI_KEY", val);
         pill.textContent = "● Key Stored in Session (Offline Engine Active)";
         alert("Future Gemini API key stored safely in sessionStorage (never exposed in GitHub source code). Offline Civic AI Engine remains active for instant judge testing.");
       } else {
