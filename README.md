@@ -5,7 +5,7 @@
 ---
 
 ## 🚀 Live Demo & Access
-* **Live GitHub Pages URL:** `https://<your-github-username>.github.io/breatheops-ai/`
+* **Live GitHub Pages URL:** `https://kumbhkarshivendra-max.github.io/BreatheOps-AI/`
 * **Zero Installation:** Runs entirely inside any modern web browser. No local servers or installations required.
 
 ---
